@@ -762,6 +762,8 @@
 
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
+const SB_URL = 'https://viwyzdcoxbkctjdfjzij.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpd3l6ZGNveGJrY3RqZGZqemlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MTc4NzMsImV4cCI6MjA5Nzk5Mzg3M30.layKIXgEdg_ohiOPKoA_o0oALSY8_E5VyOoSoeEzCEc';
 let supabaseClient = null;
 let currentStatus = 'desaparecido';
 let zonaFiltro = '';
@@ -769,13 +771,9 @@ let allPersonas = [];
 let isAdmin = false;
 
 function loadConfig() {
-  const url = localStorage.getItem('sb_url');
-  const key = localStorage.getItem('sb_key');
-  if (url && key) {
-    document.getElementById('cfg-url').value = url;
-    document.getElementById('cfg-key').value = key;
-    initSupabase(url, key);
-  }
+  initSupabase(SB_URL, SB_KEY);
+  document.getElementById('cfg-url').value = SB_URL;
+  document.getElementById('cfg-key').value = SB_KEY;
 }
 
 function initSupabase(url, key) {
@@ -788,19 +786,16 @@ function initSupabase(url, key) {
 }
 
 async function guardarConfig() {
-  const url = document.getElementById('cfg-url').value.trim();
+  const url = document.getElementById('cfg-url').value.trim() || SB_URL;
   const key = document.getElementById('cfg-key').value.trim();
-  if (!url || !key) { showToast('Ingresa la URL y la clave', 'error'); return; }
-  if (!url.startsWith('https://')) { showToast('La URL debe comenzar con https://', 'error'); return; }
+  if (!key) { showToast('Ingresa la clave anon', 'error'); return; }
 
   if (initSupabase(url, key)) {
-    // test connection
     const { error } = await supabaseClient.from('personas').select('id').limit(1);
     if (error) {
-      showToast('No se pudo conectar. Verifica las credenciales y que la tabla exista.', 'error');
+      showToast('No se pudo conectar. Verifica la clave.', 'error');
       return;
     }
-    localStorage.setItem('sb_url', url);
     localStorage.setItem('sb_key', key);
     showToast('¡Credenciales guardadas! Ahora ingresa con tu usuario.', 'success');
     document.getElementById('admin-creds-card').style.display = 'none';
@@ -1109,12 +1104,10 @@ function exportarExcel() {
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 document.getElementById('q-texto').value = '';
-loadConfig();
-if (supabaseClient) {
-  cargarPersonas();
-  checkSession();
-  document.getElementById('admin-creds-card').style.display = 'none';
-}
+initSupabase(SB_URL, SB_KEY);
+document.getElementById('admin-creds-card').style.display = 'none';
+cargarPersonas();
+checkSession();
 </script>
 </body>
 </html>
