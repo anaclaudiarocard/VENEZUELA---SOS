@@ -1108,6 +1108,7 @@ function exportarExcel() {
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
+document.getElementById('q-texto').value = '';
 loadConfig();
 if (supabaseClient) {
   cargarPersonas();
