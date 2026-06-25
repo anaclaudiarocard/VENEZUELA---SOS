@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Venezuela SOS — Búsqueda de Personas</title>
+<meta name="description" content="Plataforma de reunificación de familias afectadas por el terremoto en Venezuela. Registra o busca personas desaparecidas." />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --red:       #C0392B;
+    --red-light: #FDEDEC;
+    --red-mid:   #E74C3C;
+    --yellow:    #F39C12;
+    --yel-light: #FEF9E7;
+    --green:     #1E8449;
+    --grn-light: #EAFAF1;
+    --blue:      #1A5276;
+    --blu-light: #EAF2FB;
+    --gray-0:    #FFFFFF;
+    --gray-1:    #F8F9FA;
+    --gray-2:    #F1F3F4;
+    --gray-3:    #E8EAED;
+    --gray-5:    #9AA0A6;
+    --gray-7:    #5F6368;
+    --gray-9:    #202124;
+    --radius:    8px;
+    --shadow:    0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--gray-1);
+    color: var(--gray-9);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* TOPBAR ROCARD */
+  .topbar-rocard {
+    background: #ffffff;
+    border-bottom: 1px solid #e8eaed;
+  }
+  .topbar-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 7px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .topbar-divider {
+    width: 1px;
+    height: 18px;
+    background: #d0d0d0;
+  }
+  .topbar-credit {
+    font-size: 12px;
+    color: #888;
+    letter-spacing: 0.1px;
+  }
+  .topbar-credit strong {
+    color: #2b2b9c;
+    font-weight: 600;
+  }
+
+  /* HEADER */
+  .site-header {
+    background: var(--red);
+    color: white;
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  .header-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-flag { font-size: 28px; line-height: 1; flex-shrink: 0; }
+  .header-text h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-text p { font-size: 12px; opacity: 0.85; margin-top: 1px; }
+  .header-stats {
+    margin-left: auto;
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .hstat { text-align: center; }
+  .hstat-num { font-size: 20px; font-weight: 700; line-height: 1; }
+  .hstat-label { font-size: 10px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* LAYOUT */
+  .main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 16px;
+  }
+
+  /* BANNER UNIFICADO */
+  .unified-banner {
+    display: flex;
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 16px;
+    min-height: 90px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .banner-left {
+    flex: 1;
+    background: linear-gradient(to bottom, #F4C300 0%, #F4C300 33.3%, #003893 33.3%, #003893 66.6%, #CF2B35 66.6%, #CF2B35 100%);
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+  }
+  .slogan-flags { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .banner-slogan-title { font-size: 18px; font-weight: 800; color: white; letter-spacing: -0.3px; line-height: 1.2; text-shadow: 0 1px 4px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4); }
+  .banner-slogan-sub { font-size: 12px; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.7); }
+  .banner-divider {
+    width: 4px;
+    background: linear-gradient(to bottom, #F4C300, #CF2B35);
+    flex-shrink: 0;
+  }
+  .banner-right {
+    flex: 1;
+    background: #1a1a2e;
+    padding: 16px 18px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    justify-content: center;
+    flex-direction: column;
+  }
+  .banner-cross { font-size: 18px; color: #F4C300; flex-shrink: 0; margin-bottom: 2px; }
+  .banner-verse { font-size: 12px; color: #e8d5b0; font-style: italic; line-height: 1.55; margin-bottom: 5px; }
+  .banner-ref { font-size: 12px; color: #F4C300; font-weight: 700; letter-spacing: 0.3px; }
+
+  @media (max-width: 600px) {
+    .unified-banner { flex-direction: column; }
+    .banner-divider { width: 100%; height: 4px; background: linear-gradient(to right, #F4C300, #CF2B35); }
+  }
+
+  /* BIBLE VERSE - legacy (unused, keep for safety) */
+  .bible-banner { display: none; }
+  .slogan-banner { display: none; }
+
+  /* NOTAS */
+  .person-notas {
+    font-size: 13px; color: #1A5276;
+    background: #EAF2FB; border-left: 3px solid #1A5276;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 8px 10px; margin: 6px 0; line-height: 1.5;
+  }
+  .notas-label { font-weight: 700; display: block; margin-bottom: 2px; font-size: 12px; }
+
+  /* ALERT BANNER */
+  .alert-banner {
+    background: var(--yel-light);
+    border: 1.5px solid var(--yellow);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .alert-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .alert-text { font-size: 13px; color: #7D6608; }
+  .alert-text strong { display: block; font-size: 14px; margin-bottom: 2px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 0; margin-bottom: 20px; border-radius: var(--radius); overflow: hidden; border: 1.5px solid var(--gray-3); background: var(--gray-0); }
+  .tab-btn {
+    flex: 1; padding: 14px 12px; border: none; background: transparent;
+    font-size: 14px; font-weight: 600; cursor: pointer; color: var(--gray-7);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.15s; border-right: 1.5px solid var(--gray-3);
+  }
+  .tab-btn:last-child { border-right: none; }
+  .tab-btn.active { background: var(--red); color: white; }
+  .tab-btn:hover:not(.active) { background: var(--gray-2); }
+  .tab-icon { font-size: 18px; }
+
+  /* PANELS */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* SEARCH PANEL */
+  .search-box {
+    background: var(--gray-0);
+    border: 1.5px solid var(--gray-3);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .search-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .search-input-wrap { flex: 1; min-width: 200px; position: relative; }
+  .search-input-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--gray-5); pointer-events: none; }
+  .search-input-wrap input { padding-left: 36px; }
+  input, select, textarea {
+    width: 100%; padding: 10px 12px;
+    border: 1.5px solid var(--gray-3); border-radius: var(--radius);
+    font-size: 14px; font-family: inherit; color: var(--gray-9);
+    background: var(--gray-0); transition: border-color 0.15s;
+    appearance: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(192,57,43,0.12);
+  }
+  .filter-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .chip {
+    padding: 5px 14px; border: 1.5px solid var(--gray-3); border-radius: 20px;
+    font-size: 13px; cursor: pointer; background: var(--gray-0); color: var(--gray-7);
+    white-space: nowrap; transition: all 0.15s;
+  }
+  .chip:hover { border-color: var(--gray-5); }
+  .chip.active { background: var(--red); border-color: var(--red); color: white; font-weight: 600; }
+
+  /* RESULT CARDS */
+  .results-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px; font-size: 13px; color: var(--gray-7);
+  }
+  .results-count strong { color: var(--gray-9); }
+  .results-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .person-card {
+    background: var(--gray-0); border: 1.5px solid var(--gray-3);
+    border-radius: var(--radius); padding: 14px 16px;
+    display: flex; gap: 14px; box-shadow: var(--shadow);
+    transition: box-shadow 0.15s;
+  }
+  .person-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+
+  .person-avatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; font-weight: 700; flex-shrink: 0;
+  }
+  .avatar-desaparecido { background: var(--red-light); color: var(--red); }
+  .avatar-buscando     { background: var(--yel-light); color: #7D6608; }
+  .avatar-encontrado   { background: var(--grn-light); color: var(--green); }
+  .avatar-refugio      { background: var(--blu-light); color: var(--blue); }
+
+  .person-body { flex: 1; min-width: 0; }
+  .person-top { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .person-name { font-size: 16px; font-weight: 700; }
+  .status-badge {
+    padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .badge-desaparecido { background: var(--red-light); color: var(--red); }
+  .badge-buscando     { background: var(--yel-light); color: #7D6608; }
+  .badge-encontrado   { background: var(--grn-light); color: var(--green); }
+  .badge-refugio      { background: var(--blu-light); color: var(--blue); }
+
+  .person-meta { font-size: 13px; color: var(--gray-7); margin-bottom: 6px; }
+  .person-desc { font-size: 13px; color: var(--gray-7); margin-bottom: 8px; font-style: italic; }
+  .person-contact { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .contact-tel { font-size: 13px; color: var(--gray-7); }
+  .btn-copy {
+    padding: 4px 12px; border: 1.5px solid var(--gray-3); border-radius: var(--radius);
+    background: transparent; font-size: 12px; cursor: pointer; color: var(--gray-7);
+    transition: all 0.15s;
+  }
+  .btn-copy:hover { border-color: var(--red); color: var(--red); }
+  .person-reported { font-size: 12px; color: var(--gray-5); margin-top: 4px; }
+
+  .empty-state {
+    text-align: center; padding: 48px 16px; color: var(--gray-5);
+    background: var(--gray-0); border: 1.5px dashed var(--gray-3); border-radius: var(--radius);
+  }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* REGISTER PANEL */
+  .register-card {
+    background: var(--gray-0); border: 1.5px solid var(--gray-3);
+    border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+  }
+  .register-card h2 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .register-card .subtitle { font-size: 13px; color: var(--gray-7); margin-bottom: 20px; }
+
+  .status-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 20px; }
+  .status-option {
+    padding: 12px; border: 2px solid var(--gray-3); border-radius: var(--radius);
+    cursor: pointer; text-align: center; transition: all 0.15s; background: var(--gray-1);
+  }
+  .status-option .so-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+  .status-option .so-label { font-size: 13px; font-weight: 600; color: var(--gray-7); }
+  .status-option .so-desc { font-size: 11px; color: var(--gray-5); margin-top: 2px; }
+  .status-option.sel-desaparecido { border-color: var(--red); background: var(--red-light); }
+  .status-option.sel-desaparecido .so-label { color: var(--red); }
+  .status-option.sel-buscando { border-color: var(--yellow); background: var(--yel-light); }
+  .status-option.sel-buscando .so-label { color: #7D6608; }
+  .status-option.sel-encontrado { border-color: var(--green); background: var(--grn-light); }
+  .status-option.sel-encontrado .so-label { color: var(--green); }
+  .status-option.sel-refugio { border-color: var(--blue); background: var(--blu-light); }
+  .status-option.sel-refugio .so-label { color: var(--blue); }
+
+  .form-section { margin-bottom: 20px; }
+  .form-section-title { font-size: 13px; font-weight: 700; color: var(--gray-5); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--gray-3); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group label { font-size: 13px; font-weight: 600; color: var(--gray-7); }
+  .form-group .hint { font-size: 11px; color: var(--gray-5); }
+  textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+  .btn-submit {
+    width: 100%; padding: 14px; background: var(--red); color: white;
+    border: none; border-radius: var(--radius); font-size: 15px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background 0.15s; margin-top: 4px;
+  }
+  .btn-submit:hover { background: var(--red-mid); }
+  .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  /* CONFIG PANEL */
+  .config-card {
+    background: var(--gray-0); border: 1.5px solid var(--gray-3);
+    border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+  }
+  .config-card h2 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .config-card p { font-size: 13px; color: var(--gray-7); margin-bottom: 16px; }
+  .config-steps { counter-reset: step; display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+  .config-step { display: flex; gap: 14px; align-items: flex-start; }
+  .step-num {
+    counter-increment: step;
+    width: 28px; height: 28px; border-radius: 50%; background: var(--red);
+    color: white; font-size: 14px; font-weight: 700; display: flex;
+    align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .step-body h3 { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+  .step-body p { font-size: 13px; color: var(--gray-7); }
+  .step-body a { color: var(--red); text-decoration: none; font-weight: 600; }
+  .step-body code { background: var(--gray-2); padding: 1px 6px; border-radius: 4px; font-size: 12px; font-family: monospace; }
+  .config-fields { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .config-note { background: var(--grn-light); border: 1.5px solid #A9DFBF; border-radius: var(--radius); padding: 12px 14px; font-size: 13px; color: #1E8449; }
+
+  /* TOAST */
+  .toast-wrap { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 999; pointer-events: none; }
+  .toast {
+    padding: 12px 20px; border-radius: var(--radius); font-size: 14px; font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.25s;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+  .toast.success { background: var(--green); color: white; }
+  .toast.error   { background: var(--red); color: white; }
+  .toast.info    { background: var(--blue); color: white; }
+
+  /* SPINNER */
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* LOADING */
+  .loading-state { text-align: center; padding: 32px; color: var(--gray-5); }
+  .loading-spinner-big { width: 36px; height: 36px; border: 3px solid var(--gray-3); border-top-color: var(--red); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    .header-stats { display: none; }
+    .form-grid { grid-template-columns: 1fr; }
+    .status-grid { grid-template-columns: 1fr 1fr; }
+    .search-row { flex-direction: column; }
+    .tab-btn span.tab-label { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR ROCARD -->
+<div class="topbar-rocard">
+  <div class="topbar-inner">
+    <svg xmlns="http://www.w3.org/2000/svg" width="90" height="26" viewBox="0 50 934 430" aria-label="Rocard Corporation">
+      <g transform="matrix(3.5 0 0 3.5 215 265)">
+        <path style="fill:#2b2b9c;fill-rule:evenodd;" transform="translate(-50.00471,-49.999785)" d="m 34.551 44 c -0.66406 -0.26562 -1 -1.0195 -0.73438 -1.7031 c 0.26562 -0.66406 1.0195 -1 1.7031 -0.73438 c 3.4492 1.3789 5.7344 4.7148 5.7344 8.4375 c 0 3.7148 -2.2773 7.0625 -5.7539 8.4375 c -0.66406 0.26562 -1.418 -0.070312 -1.6836 -0.75391 c -0.26562 -0.66406 0.070313 -1.418 0.73438 -1.6836 c 2.4805 -0.96875 4.0703 -3.3477 4.0703 -6 s -1.5898 -5.0312 -4.0703 -6 z m 23.379 41.379 c 0.15234 -0.70312 0.83594 -1.1719 1.5508 -1.0391 c 0.70312 0.15234 1.1719 0.83594 1.0391 1.5508 l -1.7773 8.9688 c -0.12891 0.60938 -0.67969 1.0586 -1.2812 1.0586 h -14.859 c -0.66406 0 -1.2148 -0.48828 -1.3047 -1.1328 l -1.6133 -8.2148 l -8.1953 -3.4062 l -7.0195 4.7148 c -0.53125 0.35547 -1.2148 0.26562 -1.6641 -0.17188 l -10.488 -10.504 c -0.48828 -0.46875 -0.51172 -1.2148 -0.11328 -1.7227 l 4.6523 -6.9297 l -3.4062 -8.2148 l -8.2773 -1.6445 c -0.62109 -0.11328 -1.0625 -0.66406 -1.0625 -1.2852 l 0.003906 -14.844 c 0 -0.64453 0.48828 -1.1953 1.1328 -1.2852 l 8.2148 -1.6133 l 3.4062 -8.2148 l -4.7148 -7.0195 c -0.35547 -0.51172 -0.26562 -1.2148 0.17188 -1.6445 l 10.488 -10.52 c 0.46875 -0.46875 1.2148 -0.51172 1.7461 -0.09375 l 6.9297 4.6523 l 8.1953 -3.4062 l 1.6445 -8.2773 c 0.10156 -0.60938 0.66016 -1.0586 1.2734 -1.0586 h 14.855 c 0.66406 0 1.1953 0.48828 1.2852 1.1328 l 1.7773 8.8984 c 0.13281 0.70312 -0.33594 1.3984 -1.0391 1.5312 c -0.70312 0.15234 -1.3984 -0.30469 -1.5508 -1.0195 l -1.5508 -7.9297 h -12.684 l -1.5703 7.9297 c -0.09375 0.39844 -0.35547 0.77734 -0.77734 0.94922 l -9.5 3.9375 c -0.39844 0.15234 -0.86719 0.13281 -1.2344 -0.13281 l -6.7031 -4.4883 l -8.9688 8.9883 l 4.4492 6.6445 c 0.26562 0.35547 0.35547 0.83594 0.15234 1.2852 l -3.918 9.4492 c -0.13281 0.41797 -0.51172 0.75391 -0.96875 0.83594 l -7.9062 1.5508 v 12.703 l 7.9062 1.5508 c 0.41797 0.09375 0.77734 0.37891 0.94922 0.79687 l 3.9375 9.4805 c 0.17188 0.39844 0.13281 0.86719 -0.11328 1.2344 l -4.4883 6.7031 l 8.9688 8.9688 l 6.6445 -4.4492 c 0.37891 -0.26562 0.86719 -0.33594 1.3047 -0.15234 l 9.4297 3.918 c 0.41797 0.15234 0.75391 0.51172 0.83594 0.96875 l 1.5703 7.9062 h 12.684 z m 33.672 -39.676 c 2.3672 0 4.2969 1.9297 4.2969 4.2969 s -1.9297 4.2969 -4.2969 4.2969 c -1.9062 0 -3.5195 -1.2656 -4.0703 -2.9883 l -35.562 -0.003906 v -2.6133 h 35.551 c 0.5625 -1.7227 2.1758 -2.9883 4.082 -2.9883 z m -17.621 -28.715 h -8.8789 l -7.7969 13.5 c -0.24609 0.41797 -0.68359 0.64453 -1.1328 0.64453 h -4.2031 v -2.6133 h 3.4492 l 7.7461 -13.418 c 0.20313 -0.4375 0.66406 -0.75391 1.1719 -0.75391 h 9.6328 c 0.57031 -1.7227 2.1953 -2.9688 4.0938 -2.9688 c 2.3672 0 4.2969 1.9297 4.2969 4.2969 c 0 2.3672 -1.9297 4.2773 -4.2969 4.2773 c -1.8984 0.007813 -3.5117 -1.2383 -4.082 -2.9648 z m 10.297 15.051 h -7.6133 l -8.8164 8.7852 c -0.24609 0.26562 -0.60156 0.39844 -0.92969 0.39844 h -14.949 v -2.6328 h 14.406 l 8.7852 -8.7852 c 0.22266 -0.24609 0.55078 -0.39844 0.92969 -0.39844 h 8.1719 c 0.55078 -1.7227 2.1719 -2.9688 4.0938 -2.9688 c 2.3672 0 4.2969 1.9062 4.2969 4.2773 c 0 2.3867 -1.9297 4.2969 -4.2969 4.2969 c -1.918 0 -3.5273 -1.2344 -4.0781 -2.9727 z m -10.297 53.605 h -9.6328 c -0.51172 0 -0.96875 -0.30469 -1.1719 -0.75391 l -7.7461 -13.418 h -3.4492 v -2.6133 h 4.2031 c 0.4375 0 0.88672 0.22266 1.1328 0.64453 l 7.7969 13.5 h 8.8789 c 0.57031 -1.7227 2.1953 -2.9883 4.0938 -2.9883 c 2.3672 0 4.2969 1.9297 4.2969 4.2969 s -1.9297 4.2969 -4.2969 4.2969 c -1.9219 0.003906 -3.5352 -1.2422 -4.1055 -2.9648 z m 10.297 -15.051 h -8.1719 c -0.37891 0 -0.70312 -0.15234 -0.92969 -0.39844 l -8.7852 -8.7852 l -14.422 -0.003906 v -2.6328 h 14.938 c 0.33594 0 0.68359 0.13281 0.92969 0.39844 l 8.8164 8.7852 h 7.6133 c 0.55078 -1.7227 2.1719 -2.9688 4.0938 -2.9688 c 2.3672 0 4.2969 1.9062 4.2969 4.2773 c 0 2.3672 -1.9297 4.2969 -4.2969 4.2969 c -1.9219 -0.011719 -3.5312 -1.2461 -4.082 -2.9688 z"/>
+      </g>
+      <g transform="matrix(1.88 0 0 1.88 654 265)" fill="#2b2b9c">
+        <path d="M-94.05-4.72L-94.05-10.22Q-94.05-12.53-95.65-14.13Q-97.24-15.72-99.55-15.72L-121.55-15.72L-121.55 0.78L-99.55 0.78Q-97.24 0.78-95.65-0.82Q-94.05-2.41-94.05-4.72ZM-88.55 17.28L-92.46 17.28L-103.46 6.28L-121.55 6.28L-121.55 17.28L-127.05 17.28L-127.05-21.22L-99.55-21.22Q-97.41-21.22-95.40-20.37Q-93.39-19.52-91.88-18.03Q-90.37-16.55-89.46-14.54Q-88.55-12.53-88.55-10.22L-88.55-4.72Q-88.55-2.96-89.10-1.34Q-89.65 0.28-90.67 1.66Q-91.69 3.03-93.09 4.11Q-94.49 5.18-96.20 5.73L-88.55 13.37Z"/><path d="M-51.15 6.28L-51.15-10.22Q-51.15-12.53-52.75-14.13Q-54.34-15.72-56.65-15.72L-73.15-15.72Q-75.46-15.72-77.06-14.13Q-78.65-12.53-78.65-10.22L-78.65 6.28Q-78.65 8.59-77.06 10.18Q-75.46 11.78-73.15 11.78L-56.65 11.78Q-54.34 11.78-52.75 10.18Q-51.15 8.59-51.15 6.28ZM-45.65-10.22L-45.65 6.28Q-45.65 8.53-46.53 10.54Q-47.41 12.55-48.90 14.03Q-50.38 15.52-52.39 16.40Q-54.40 17.28-56.65 17.28L-73.15 17.28Q-75.46 17.28-77.47 16.43Q-79.48 15.57-80.96 14.09Q-82.45 12.60-83.30 10.60Q-84.15 8.59-84.15 6.28L-84.15-10.22Q-84.15-12.48-83.27-14.48Q-82.39-16.49-80.91-17.98Q-79.42-19.46-77.41-20.34Q-75.41-21.22-73.15-21.22L-56.65-21.22Q-54.45-21.22-52.47-20.34Q-50.49-19.46-48.98-17.98Q-47.47-16.49-46.56-14.48Q-45.65-12.48-45.65-10.22Z"/><path d="M-30.25-21.22L-13.75-21.22Q-11.55-21.22-9.57-20.37Q-7.59-19.52-6.11-18.03Q-4.62-16.55-3.71-14.54Q-2.80-12.53-2.75-10.22L-8.25-10.22Q-8.25-12.53-9.85-14.13Q-11.44-15.72-13.75-15.72L-30.25-15.72Q-32.56-15.72-34.16-14.13Q-35.75-12.53-35.75-10.22L-35.75 6.28Q-35.75 8.59-34.16 10.18Q-32.56 11.78-30.25 11.78L-13.75 11.78Q-11.44 11.78-9.85 10.18Q-8.25 8.59-8.25 6.28L-2.75 6.28Q-2.75 8.48-3.60 10.46Q-4.46 12.44-5.94 13.95Q-7.43 15.46-9.43 16.37Q-11.44 17.28-13.75 17.28L-30.25 17.28Q-32.45 17.28-34.46 16.43Q-36.47 15.57-37.98 14.09Q-39.49 12.60-40.37 10.60Q-41.25 8.59-41.25 6.28L-41.25-10.22Q-41.25-12.42-40.40-14.40Q-39.55-16.38-38.06-17.87Q-36.58-19.35-34.57-20.26Q-32.56-21.17-30.25-21.22Z"/><path d="M29.15-15.72L12.65-15.72Q10.34-15.72 8.74-14.13Q7.15-12.53 7.15-10.22L7.15 0.78L34.65 0.78L34.65-10.22Q34.65-12.53 33.05-14.13Q31.46-15.72 29.15-15.72ZM40.15-10.22L40.15 17.28L34.65 17.28L34.65 6.28L7.15 6.28L7.15 17.28L1.65 17.28L1.65-10.22Q1.65-12.42 2.50-14.40Q3.35-16.38 4.84-17.89Q6.32-19.41 8.33-20.31Q10.34-21.22 12.65-21.22L29.15-21.22Q31.35-21.22 33.33-20.37Q35.31-19.52 36.80-18.03Q38.28-16.55 39.19-14.54Q40.09-12.53 40.15-10.22Z"/><path d="M78.65-4.72L78.65-10.22Q78.65-12.53 77.06-14.13Q75.46-15.72 73.15-15.72L51.15-15.72L51.15 0.78L73.15 0.78Q75.46 0.78 77.06-0.82Q78.65-2.41 78.65-4.72ZM84.15 17.28L80.25 17.28L69.25 6.28L51.15 6.28L51.15 17.28L45.65 17.28L45.65-21.22L73.15-21.22Q75.30-21.22 77.30-20.37Q79.31-19.52 80.82-18.03Q82.34-16.55 83.24-14.54Q84.15-12.53 84.15-10.22L84.15-4.72Q84.15-2.96 83.60-1.34Q83.05 0.28 82.03 1.66Q81.02 3.03 79.61 4.11Q78.21 5.18 76.50 5.73L84.15 13.37Z"/><path d="M122.10 6.28L122.10-10.22Q122.10-12.53 120.50-14.13Q118.91-15.72 116.60-15.72L94.60-15.72L94.60 11.78L116.60 11.78Q118.91 11.78 120.50 10.18Q122.10 8.59 122.10 6.28ZM127.60-10.22L127.60 6.28Q127.60 8.48 126.75 10.46Q125.89 12.44 124.41 13.95Q122.92 15.46 120.92 16.37Q118.91 17.28 116.60 17.28L89.10 17.28L89.10-21.22L116.60-21.22Q118.80-21.22 120.78-20.37Q122.76-19.52 124.25-18.03Q125.73-16.55 126.64-14.54Q127.54-12.53 127.60-10.22Z"/>
+      </g>
+    </svg>
+    <div class="topbar-divider"></div>
+    <span class="topbar-credit">Plataforma creada por <strong>Ana Rodriguez</strong></span>
+  </div>
+</div>
+<header class="site-header">
+  <div class="header-inner">
+    <!-- Bandera Venezuela SVG -->
+    <svg width="52" height="34" viewBox="0 0 52 34" style="border-radius:3px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,0.3)" aria-label="Bandera de Venezuela">
+      <rect width="52" height="11.3" fill="#CF2B35"/>
+      <rect y="11.3" width="52" height="11.3" fill="#003893"/>
+      <rect y="22.6" width="52" height="11.4" fill="#CF2B35"/>
+      <rect y="11.3" width="52" height="11.3" fill="#003893"/>
+      <rect width="52" height="11.3" fill="#F4C300"/>
+      <!-- 8 estrellas en arco -->
+      <g fill="white" transform="translate(26,17.9)">
+        <polygon points="0,-3.2 0.75,-1 2.6,-1 1.1,0.4 1.7,2.2 0,1.1 -1.7,2.2 -1.1,0.4 -2.6,-1 -0.75,-1" transform="rotate(-90) translate(0,-8)"/>
+        <polygon points="0,-3.2 0.75,-1 2.6,-1 1.1,0.4 1.7,2.2 0,1.1 -1.7,2.2 -1.1,0.4 -2.6,-1 -0.75,-1" transform="rotate(-45) translate(0,-8)"/>
+        <polygon points="0,-3.2 0.75,-1 2.6,-1 1.1,0.4 1.7,2.2 0,1.1 -1.7,2.2 -1.1,0.4 -2.6,-1 -0.75,-1" transform="rotate(0) translate(0,-8)"/>
+        <polygon points="0,-3.2 0.75,-1 2.6,-1 1.1,0.4 1.7,2.2 0,1.1 -1.7,2.2 -1.1,0.4 -2.6,-1 -0.75,-1" transform="rotate(45) translate(0,-8)"/>
+        <polygon points="0,-3.2 0.75,-1 2.6,-1 1.1,0.4 1.7,2.2 0,1.1 -1.7,2.2 -1.1,0.4 -2.6,-1 -0.75,-1" transform="rotate(90) translate(0,-8)"/>
+        <polygon points="0,-3.2 0.75,-1 2.6,-1 1.1,0.4 1.7,2.2 0,1.1 -1.7,2.2 -1.1,0.4 -2.6,-1 -0.75,-1" transform="rotate(-112) translate(0,-8)"/>
+        <polygon points="0,-3.2 0.75,-1 2.6,-1 1.1,0.4 1.7,2.2 0,1.1 -1.7,2.2 -1.1,0.4 -2.6,-1 -0.75,-1" transform="rotate(112) translate(0,-8)"/>
+        <polygon points="0,-3.2 0.75,-1 2.6,-1 1.1,0.4 1.7,2.2 0,1.1 -1.7,2.2 -1.1,0.4 -2.6,-1 -0.75,-1" transform="rotate(135) translate(0,-8)"/>
+      </g>
+    </svg>
+    <div class="header-text">
+      <h1>Venezuela SOS — Búsqueda de Personas</h1>
+      <p>Terremoto Venezuela · Reunificación de familias</p>
+    </div>
+    <div class="header-stats">
+      <div class="hstat">
+        <div class="hstat-num" id="stat-total">—</div>
+        <div class="hstat-label">Registros</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-num" id="stat-desap">—</div>
+        <div class="hstat-label">Desaparecidos</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-num" id="stat-enc">—</div>
+        <div class="hstat-label">Encontrados</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- BANNER UNIFICADO: ESLOGAN + CITA BÍBLICA -->
+  <div class="unified-banner">
+    <div class="banner-left">
+      <div class="slogan-flags">
+        <svg width="34" height="22" viewBox="0 0 38 25" style="border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,0.3)" aria-label="Venezuela">
+          <rect width="38" height="8.3" fill="#F4C300"/>
+          <rect y="8.3" width="38" height="8.3" fill="#003893"/>
+          <rect y="16.6" width="38" height="8.4" fill="#CF2B35"/>
+          <g fill="white" transform="translate(19,12.5)">
+            <polygon points="0,-2.2 0.5,-0.7 1.8,-0.7 0.75,0.25 1.15,1.5 0,0.75 -1.15,1.5 -0.75,0.25 -1.8,-0.7 -0.5,-0.7" transform="rotate(-90) translate(0,-5.5)"/>
+            <polygon points="0,-2.2 0.5,-0.7 1.8,-0.7 0.75,0.25 1.15,1.5 0,0.75 -1.15,1.5 -0.75,0.25 -1.8,-0.7 -0.5,-0.7" transform="rotate(-45) translate(0,-5.5)"/>
+            <polygon points="0,-2.2 0.5,-0.7 1.8,-0.7 0.75,0.25 1.15,1.5 0,0.75 -1.15,1.5 -0.75,0.25 -1.8,-0.7 -0.5,-0.7" transform="rotate(0) translate(0,-5.5)"/>
+            <polygon points="0,-2.2 0.5,-0.7 1.8,-0.7 0.75,0.25 1.15,1.5 0,0.75 -1.15,1.5 -0.75,0.25 -1.8,-0.7 -0.5,-0.7" transform="rotate(45) translate(0,-5.5)"/>
+            <polygon points="0,-2.2 0.5,-0.7 1.8,-0.7 0.75,0.25 1.15,1.5 0,0.75 -1.15,1.5 -0.75,0.25 -1.8,-0.7 -0.5,-0.7" transform="rotate(90) translate(0,-5.5)"/>
+            <polygon points="0,-2.2 0.5,-0.7 1.8,-0.7 0.75,0.25 1.15,1.5 0,0.75 -1.15,1.5 -0.75,0.25 -1.8,-0.7 -0.5,-0.7" transform="rotate(-112) translate(0,-5.5)"/>
+            <polygon points="0,-2.2 0.5,-0.7 1.8,-0.7 0.75,0.25 1.15,1.5 0,0.75 -1.15,1.5 -0.75,0.25 -1.8,-0.7 -0.5,-0.7" transform="rotate(112) translate(0,-5.5)"/>
+            <polygon points="0,-2.2 0.5,-0.7 1.8,-0.7 0.75,0.25 1.15,1.5 0,0.75 -1.15,1.5 -0.75,0.25 -1.8,-0.7 -0.5,-0.7" transform="rotate(135) translate(0,-5.5)"/>
+          </g>
+        </svg>
+        <span style="font-size:16px;">❤️</span>
+        <svg width="22" height="22" viewBox="0 0 25 25" style="border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,0.3)" aria-label="Perú">
+          <rect width="25" height="25" fill="#CF2B35"/>
+          <rect x="8.3" width="8.4" height="25" fill="white"/>
+        </svg>
+      </div>
+      <div class="banner-slogan-title">¡Resistan, hermanos venezolanos!</div>
+      <div class="banner-slogan-sub">Unidos desde Perú y el mundo entero. No están solos.</div>
+    </div>
+    <div class="banner-divider"></div>
+    <div class="banner-right">
+      <div class="banner-cross">✝</div>
+      <div class="banner-bible-text">
+        <div class="banner-verse">"No temas, porque yo estoy contigo; no desmayes, porque yo soy tu Dios que te esfuerzo; siempre te ayudaré, siempre te sustentaré con la diestra de mi justicia."</div>
+        <div class="banner-ref">— Isaías 41:10</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALERT -->
+  <div class="alert-banner">
+    <div class="alert-icon">⚠️</div>
+    <div class="alert-text">
+      <strong>Emergencia activa — Terremoto en Venezuela</strong>
+      Esta plataforma permite registrar personas desaparecidas y buscar entre los registros. Si estás en peligro inmediato, llama al <strong>911</strong> o a Protección Civil.
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" onclick="switchTab('buscar')" role="tab" aria-selected="true">
+      <span class="tab-icon">🔍</span>
+      <span class="tab-label">Buscar persona</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('registrar')" role="tab" aria-selected="false">
+      <span class="tab-icon">📋</span>
+      <span class="tab-label">Registrar persona</span>
+    </button>
+    <button class="tab-btn" id="tab-config-btn" onclick="switchTab('config')" role="tab" aria-selected="false" style="display:none;">
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-label">Configurar</span>
+    </button>
+  </div>
+  <div style="text-align:right; margin-top:-14px; margin-bottom:10px;">
+    <span id="config-hint" onclick="abrirAdmin()" style="font-size:11px; color:var(--gray-5); cursor:pointer; user-select:none;">⚙️ Admin</span>
+  </div>
+
+  <!-- PANEL: BUSCAR -->
+  <div class="panel active" id="panel-buscar" role="tabpanel">
+    <div class="search-box">
+      <div class="search-row">
+        <div class="search-input-wrap">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="q-texto" placeholder="Nombre, apellido o cédula..." oninput="buscar()" />
+        </div>
+        <select id="q-estado" onchange="buscar()" style="width:180px; flex-shrink:0;">
+          <option value="">Todos los estados</option>
+          <option value="desaparecido">🔴 Desaparecidos</option>
+          <option value="buscando">🟡 Buscando familiar</option>
+          <option value="encontrado">🟢 Encontrados</option>
+          <option value="refugio">🔵 En refugio</option>
+        </select>
+      </div>
+      <div class="filter-row" id="filter-zonas">
+        <span class="chip active" onclick="filtrarZona(this,'')">Todas las zonas</span>
+        <span class="chip" onclick="filtrarZona(this,'Caracas')">Caracas</span>
+        <span class="chip" onclick="filtrarZona(this,'La Guaira')">La Guaira</span>
+        <span class="chip" onclick="filtrarZona(this,'Vargas')">Vargas</span>
+        <span class="chip" onclick="filtrarZona(this,'Miranda')">Miranda</span>
+        <span class="chip" onclick="filtrarZona(this,'Aragua')">Aragua</span>
+        <span class="chip" onclick="filtrarZona(this,'Carabobo')">Carabobo</span>
+        <span class="chip" onclick="filtrarZona(this,'Zulia')">Zulia</span>
+        <span class="chip" onclick="filtrarZona(this,'Otra')">Otra</span>
+      </div>
+    </div>
+
+    <div class="results-header">
+      <div class="results-count" id="results-count">Cargando...</div>
+    </div>
+    <div class="results-list" id="results-list">
+      <div class="loading-state">
+        <div class="loading-spinner-big"></div>
+        <p>Cargando registros...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: REGISTRAR -->
+  <div class="panel" id="panel-registrar" role="tabpanel">
+    <div class="register-card">
+      <h2>Registrar persona</h2>
+      <p class="subtitle">Completa el formulario. Todos los registros son públicos para facilitar la búsqueda.</p>
+
+      <div class="form-section">
+        <div class="form-section-title">¿Cuál es la situación?</div>
+        <div class="status-grid">
+          <div class="status-option sel-desaparecido" onclick="selectStatus('desaparecido',this)">
+            <span class="so-icon">🔴</span>
+            <span class="so-label">Está desaparecido/a</span>
+            <span class="so-desc">No sé dónde está</span>
+          </div>
+          <div class="status-option" onclick="selectStatus('buscando',this)">
+            <span class="so-icon">🟡</span>
+            <span class="so-label">Busco a alguien</span>
+            <span class="so-desc">Soy el familiar que busca</span>
+          </div>
+          <div class="status-option" onclick="selectStatus('encontrado',this)">
+            <span class="so-icon">🟢</span>
+            <span class="so-label">Fue encontrado/a</span>
+            <span class="so-desc">Ya apareció o está a salvo</span>
+          </div>
+          <div class="status-option" onclick="selectStatus('refugio',this)">
+            <span class="so-icon">🔵</span>
+            <span class="so-label">Estoy en un refugio</span>
+            <span class="so-desc">Estoy a salvo pero separado</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">Datos de la persona</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="f-nombre">Nombre *</label>
+            <input type="text" id="f-nombre" placeholder="Ej: María" />
+          </div>
+          <div class="form-group">
+            <label for="f-apellido">Apellido *</label>
+            <input type="text" id="f-apellido" placeholder="Ej: González" />
+          </div>
+          <div class="form-group">
+            <label for="f-cedula">Cédula de identidad</label>
+            <input type="text" id="f-cedula" placeholder="V-12345678" />
+          </div>
+          <div class="form-group">
+            <label for="f-edad">Edad</label>
+            <input type="number" id="f-edad" placeholder="Ej: 35" min="0" max="120" />
+          </div>
+          <div class="form-group">
+            <label for="f-zona">Último lugar visto / Zona *</label>
+            <select id="f-zona">
+              <option value="">Selecciona un estado</option>
+              <option>Caracas</option>
+              <option>La Guaira</option>
+              <option>Vargas</option>
+              <option>Miranda</option>
+              <option>Aragua</option>
+              <option>Carabobo</option>
+              <option>Zulia</option>
+              <option>Lara</option>
+              <option>Bolívar</option>
+              <option>Táchira</option>
+              <option>Mérida</option>
+              <option>Otra</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="f-tel">Teléfono de contacto *</label>
+            <input type="tel" id="f-tel" placeholder="0414-1234567" />
+          </div>
+          <div class="form-group full">
+            <label for="f-desc">Descripción física / señas particulares</label>
+            <textarea id="f-desc" placeholder="Altura, complexión, color de cabello, ropa que llevaba al momento del terremoto, cicatrices, tatuajes u otras señas..."></textarea>
+            <span class="hint">Mientras más detallada, más fácil encontrarla.</span>
+          </div>
+          <div class="form-group full">
+            <label for="f-ubicacion">Dirección o lugar específico (si aplica)</label>
+            <input type="text" id="f-ubicacion" placeholder="Ej: Sector Los Palos Grandes, Chacao" />
+          </div>
+          <div class="form-group full">
+            <label for="f-reporta">Tu nombre (quien hace el reporte)</label>
+            <input type="text" id="f-reporta" placeholder="Ej: Luis González (hermano)" />
+          </div>
+          <div class="form-group full">
+            <label for="f-notas">📝 Notas para familiares</label>
+            <textarea id="f-notas" placeholder="Escribe aquí cualquier mensaje para la familia: última vez que se comunicaron, dónde podría estar, un mensaje de esperanza, información sobre dónde ir a buscarlos..." style="min-height:100px;"></textarea>
+            <span class="hint">Este mensaje será visible para cualquier persona que encuentre este registro y podrá ayudar a localizar a tu familiar.</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-submit" id="btn-registrar" onclick="registrar()">
+        <span id="btn-text">📋 Registrar persona</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- PANEL: CONFIG (solo admin autenticado) -->
+  <div class="panel" id="panel-config" role="tabpanel">
+
+    <!-- LOGIN FORM (visible hasta que el admin inicie sesión) -->
+    <div id="admin-login-card" class="config-card">
+      <div style="text-align:center; margin-bottom:20px;">
+        <div style="font-size:40px; margin-bottom:8px;">🔐</div>
+        <h2 style="margin-bottom:4px;">Acceso de administrador</h2>
+        <p style="font-size:13px; color:var(--gray-7);">Solo el administrador autorizado puede acceder a esta sección.</p>
+      </div>
+      <div class="config-fields">
+        <div class="form-group">
+          <label>Correo electrónico</label>
+          <input type="email" id="admin-email" placeholder="tu@correo.com" />
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="admin-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter') loginAdmin()" />
+        </div>
+      </div>
+      <button class="btn-submit" id="btn-login" onclick="loginAdmin()">
+        <span id="btn-login-text">🔑 Ingresar</span>
+      </button>
+      <p style="font-size:12px; color:var(--gray-5); text-align:center; margin-top:12px;">Las credenciales se verifican con Supabase. Nadie más puede entrar.</p>
+    </div>
+
+    <!-- PANEL ADMIN (solo visible tras login exitoso) -->
+    <div id="admin-panel-card" style="display:none;">
+      <div class="config-card" style="margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div>
+            <h2 style="margin-bottom:2px;">⚙️ Panel de administrador</h2>
+            <p id="admin-user-label" style="font-size:13px; color:var(--gray-7);"></p>
+          </div>
+          <button onclick="logoutAdmin()" style="padding:8px 14px; border:1.5px solid var(--gray-3); border-radius:var(--radius); background:transparent; font-size:13px; cursor:pointer; color:var(--gray-7);">Cerrar sesión</button>
+        </div>
+
+        <div class="form-section-title" style="margin-bottom:12px;">Conexión a Supabase</div>
+        <div class="config-fields">
+          <div class="form-group">
+            <label>Project URL</label>
+            <input type="text" id="cfg-url" placeholder="https://xxxxxxxxxxxx.supabase.co" />
+          </div>
+          <div class="form-group">
+            <label>Anon Public Key</label>
+            <input type="text" id="cfg-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+          </div>
+        </div>
+        <button class="btn-submit" onclick="guardarConfig()" style="margin-top:12px;">💾 Guardar y conectar</button>
+        <div class="config-note" style="margin-top:16px;">
+          ✅ <strong>Todo gratis:</strong> Supabase ofrece 500 MB y 50,000 filas gratis. Los datos se guardan de forma segura en servidores de Amazon AWS.
+        </div>
+      </div>
+
+      <div class="config-card">
+        <div class="form-section-title" style="margin-bottom:12px;">Cómo configurar Supabase por primera vez</div>
+        <div class="config-steps">
+          <div class="config-step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h3>Crea tu cuenta gratis</h3>
+              <p>Ve a <a href="https://supabase.com" target="_blank">supabase.com</a> → "Start your project" → regístrate con Google o email.</p>
+            </div>
+          </div>
+          <div class="config-step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h3>Crea un nuevo proyecto</h3>
+              <p>Ponle nombre (ej: <code>venezuela-sos</code>), elige una contraseña y región. Espera ~2 minutos.</p>
+            </div>
+          </div>
+          <div class="config-step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h3>Crea la tabla en SQL Editor</h3>
+              <div style="background:var(--gray-9);color:#A8FF78;padding:12px;border-radius:6px;font-size:12px;font-family:monospace;margin-top:8px;line-height:1.6;overflow-x:auto;">
+                CREATE TABLE personas (<br>
+                &nbsp;&nbsp;id uuid DEFAULT gen_random_uuid() PRIMARY KEY,<br>
+                &nbsp;&nbsp;nombre text NOT NULL,<br>
+                &nbsp;&nbsp;apellido text NOT NULL,<br>
+                &nbsp;&nbsp;cedula text,<br>
+                &nbsp;&nbsp;edad integer,<br>
+                &nbsp;&nbsp;zona text,<br>
+                &nbsp;&nbsp;telefono text,<br>
+                &nbsp;&nbsp;status text DEFAULT 'desaparecido',<br>
+                &nbsp;&nbsp;descripcion text,<br>
+                &nbsp;&nbsp;ubicacion text,<br>
+                &nbsp;&nbsp;reportado_por text,<br>
+                &nbsp;&nbsp;notas text,<br>
+                &nbsp;&nbsp;created_at timestamptz DEFAULT now()<br>
+                );<br><br>
+                ALTER TABLE personas ENABLE ROW LEVEL SECURITY;<br><br>
+                CREATE POLICY "lectura_publica" ON personas FOR SELECT USING (true);<br>
+                CREATE POLICY "insercion_publica" ON personas FOR INSERT WITH CHECK (true);
+              </div>
+            </div>
+          </div>
+          <div class="config-step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <h3>Copia tus credenciales</h3>
+              <p>En Supabase ve a <strong>Project Settings → API</strong>. Copia la <strong>Project URL</strong> y la <strong>anon public key</strong> y pégalas arriba.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<!-- TOAST -->
+<div class="toast-wrap">
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+let supabaseClient = null;
+let currentStatus = 'desaparecido';
+let zonaFiltro = '';
+let allPersonas = [];
+
+function loadConfig() {
+  const url = localStorage.getItem('sb_url');
+  const key = localStorage.getItem('sb_key');
+  if (url && key) {
+    document.getElementById('cfg-url').value = url;
+    document.getElementById('cfg-key').value = key;
+    initSupabase(url, key);
+  }
+}
+
+function initSupabase(url, key) {
+  try {
+    supabaseClient = supabase.createClient(url, key);
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+async function guardarConfig() {
+  const url = document.getElementById('cfg-url').value.trim();
+  const key = document.getElementById('cfg-key').value.trim();
+  if (!url || !key) { showToast('Ingresa la URL y la clave', 'error'); return; }
+  if (!url.startsWith('https://')) { showToast('La URL debe comenzar con https://', 'error'); return; }
+
+  if (initSupabase(url, key)) {
+    // test connection
+    const { error } = await supabaseClient.from('personas').select('id').limit(1);
+    if (error) {
+      showToast('No se pudo conectar. Verifica las credenciales y que la tabla exista.', 'error');
+      return;
+    }
+    localStorage.setItem('sb_url', url);
+    localStorage.setItem('sb_key', key);
+    showToast('¡Conectado exitosamente!', 'success');
+    switchTab('buscar');
+    cargarPersonas();
+  }
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function abrirAdmin() {
+  document.getElementById('tab-config-btn').style.display = 'flex';
+  switchTab('config');
+}
+
+function switchTab(tab) {
+  const tabs = ['buscar','registrar','config'];
+  tabs.forEach((t,i) => {
+    document.getElementById('panel-'+t).classList.toggle('active', t===tab);
+    document.querySelectorAll('.tab-btn')[i].classList.toggle('active', t===tab);
+    document.querySelectorAll('.tab-btn')[i].setAttribute('aria-selected', t===tab);
+  });
+  if (tab === 'buscar') cargarPersonas();
+}
+
+// ─── STATUS SELECTOR ─────────────────────────────────────────────────────────
+function selectStatus(status, el) {
+  currentStatus = status;
+  document.querySelectorAll('.status-option').forEach(e => {
+    e.className = 'status-option';
+  });
+  el.classList.add('sel-'+status);
+}
+
+// ─── FILTRO ZONA ──────────────────────────────────────────────────────────────
+function filtrarZona(el, zona) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  zonaFiltro = zona;
+  renderPersonas();
+}
+
+// ─── CARGAR PERSONAS ──────────────────────────────────────────────────────────
+async function cargarPersonas() {
+  if (!supabaseClient) {
+    document.getElementById('results-list').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚙️</div>
+        <p><strong>Base de datos no configurada</strong><br>Ve a la pestaña Configurar para conectar Supabase.</p>
+      </div>`;
+    document.getElementById('results-count').textContent = '';
+    return;
+  }
+
+  document.getElementById('results-list').innerHTML = `<div class="loading-state"><div class="loading-spinner-big"></div><p>Cargando registros...</p></div>`;
+
+  const { data, error } = await supabaseClient
+    .from('personas')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    document.getElementById('results-list').innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><p>Error al cargar datos. Verifica la conexión.</p></div>`;
+    return;
+  }
+
+  allPersonas = data || [];
+  actualizarStats();
+  renderPersonas();
+}
+
+function actualizarStats() {
+  document.getElementById('stat-total').textContent = allPersonas.length;
+  document.getElementById('stat-desap').textContent = allPersonas.filter(p=>p.status==='desaparecido').length;
+  document.getElementById('stat-enc').textContent   = allPersonas.filter(p=>p.status==='encontrado').length;
+}
+
+// ─── BUSCAR / FILTRAR ─────────────────────────────────────────────────────────
+function buscar() { renderPersonas(); }
+
+function renderPersonas() {
+  const q      = (document.getElementById('q-texto').value || '').toLowerCase().trim();
+  const estado = document.getElementById('q-estado').value;
+
+  const lista = allPersonas.filter(p => {
+    const txt = `${p.nombre} ${p.apellido} ${p.cedula||''}`.toLowerCase();
+    return (!q || txt.includes(q))
+        && (!estado || p.status === estado)
+        && (!zonaFiltro || p.zona === zonaFiltro);
+  });
+
+  const count = document.getElementById('results-count');
+  count.innerHTML = `<strong>${lista.length}</strong> persona${lista.length!==1?'s':''} encontrada${lista.length!==1?'s':''}`;
+
+  if (!lista.length) {
+    document.getElementById('results-list').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <p>No se encontraron personas con esos criterios.<br>Prueba cambiando el filtro o el texto de búsqueda.</p>
+      </div>`;
+    return;
+  }
+
+  const statusLabel = { desaparecido:'Desaparecido/a', buscando:'Buscando familiar', encontrado:'Encontrado/a', refugio:'En refugio' };
+  const initials = (n,a) => ((n||'')[0]||'').toUpperCase() + ((a||'')[0]||'').toUpperCase();
+
+  document.getElementById('results-list').innerHTML = lista.map(p => `
+    <div class="person-card">
+      <div class="person-avatar avatar-${p.status}">${initials(p.nombre, p.apellido)}</div>
+      <div class="person-body">
+        <div class="person-top">
+          <span class="person-name">${esc(p.nombre)} ${esc(p.apellido)}</span>
+          <span class="status-badge badge-${p.status}">${statusLabel[p.status]||p.status}</span>
+        </div>
+        <div class="person-meta">
+          ${p.cedula ? `<span>🪪 ${esc(p.cedula)}</span> · ` : ''}
+          ${p.edad   ? `<span>${p.edad} años</span> · ` : ''}
+          <span>📍 ${esc(p.zona||'Sin zona')}</span>
+          ${p.ubicacion ? ` · ${esc(p.ubicacion)}` : ''}
+        </div>
+        ${p.descripcion ? `<div class="person-desc">"${esc(p.descripcion)}"</div>` : ''}
+        ${p.notas ? `<div class="person-notas"><span class="notas-label">📝 Nota para familiares:</span> ${esc(p.notas)}</div>` : ''}
+        <div class="person-contact">
+          ${p.telefono ? `<span class="contact-tel">📞 ${esc(p.telefono)}</span>` : ''}
+          ${p.telefono ? `<button class="btn-copy" onclick="copiarTel('${esc(p.telefono)}')">Copiar</button>` : ''}
+        </div>
+        ${p.reportado_por ? `<div class="person-reported">Reportado por: ${esc(p.reportado_por)}</div>` : ''}
+        <div class="person-reported" style="color:var(--gray-5);font-size:11px;margin-top:4px;">${new Date(p.created_at).toLocaleString('es-VE')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── REGISTRAR ────────────────────────────────────────────────────────────────
+async function registrar() {
+  const nombre   = document.getElementById('f-nombre').value.trim();
+  const apellido = document.getElementById('f-apellido').value.trim();
+  const zona     = document.getElementById('f-zona').value;
+  const tel      = document.getElementById('f-tel').value.trim();
+
+  if (!nombre)   { showToast('El nombre es obligatorio', 'error'); return; }
+  if (!apellido) { showToast('El apellido es obligatorio', 'error'); return; }
+  if (!zona)     { showToast('Selecciona una zona', 'error'); return; }
+  if (!tel)      { showToast('El teléfono de contacto es obligatorio', 'error'); return; }
+
+  if (!supabaseClient) {
+    showToast('Primero configura Supabase en la pestaña Configurar', 'error');
+    switchTab('config');
+    return;
+  }
+
+  const btn  = document.getElementById('btn-registrar');
+  const btxt = document.getElementById('btn-text');
+  btn.disabled = true;
+  btxt.innerHTML = '<span class="spinner"></span> Guardando...';
+
+  const { error } = await supabaseClient.from('personas').insert([{
+    nombre,
+    apellido,
+    cedula:       document.getElementById('f-cedula').value.trim() || null,
+    edad:         parseInt(document.getElementById('f-edad').value) || null,
+    zona,
+    telefono:     tel,
+    status:       currentStatus,
+    descripcion:  document.getElementById('f-desc').value.trim() || null,
+    ubicacion:    document.getElementById('f-ubicacion').value.trim() || null,
+    reportado_por: document.getElementById('f-reporta').value.trim() || null,
+    notas:        document.getElementById('f-notas').value.trim() || null,
+  }]);
+
+  btn.disabled = false;
+  btxt.textContent = '📋 Registrar persona';
+
+  if (error) {
+    showToast('Error al guardar. Intenta de nuevo.', 'error');
+    console.error(error);
+    return;
+  }
+
+  showToast('Persona registrada exitosamente ✅', 'success');
+  ['f-nombre','f-apellido','f-cedula','f-edad','f-tel','f-desc','f-ubicacion','f-reporta','f-notas'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-zona').value = '';
+  switchTab('buscar');
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function copiarTel(tel) {
+  navigator.clipboard.writeText(tel).then(() => showToast('Teléfono copiado 📋', 'info'));
+}
+
+let toastTimer;
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ─── ADMIN AUTH ───────────────────────────────────────────────────────────────
+async function loginAdmin() {
+  const email = document.getElementById('admin-email').value.trim();
+  const pass  = document.getElementById('admin-pass').value;
+  if (!email || !pass) { showToast('Ingresa tu correo y contraseña', 'error'); return; }
+  if (!supabaseClient) { showToast('Primero guarda las credenciales de Supabase en los campos de abajo', 'error'); return; }
+
+  const btn  = document.getElementById('btn-login');
+  const btxt = document.getElementById('btn-login-text');
+  btn.disabled = true;
+  btxt.innerHTML = '<span class="spinner"></span> Verificando...';
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
+
+  btn.disabled = false;
+  btxt.textContent = '🔑 Ingresar';
+
+  if (error) {
+    showToast('Correo o contraseña incorrectos', 'error');
+    return;
+  }
+  mostrarPanelAdmin(data.user.email);
+  showToast('Bienvenido, administrador ✅', 'success');
+}
+
+function mostrarPanelAdmin(email) {
+  document.getElementById('admin-login-card').style.display = 'none';
+  document.getElementById('admin-panel-card').style.display = 'block';
+  document.getElementById('admin-user-label').textContent = 'Sesión activa: ' + email;
+}
+
+async function logoutAdmin() {
+  if (supabaseClient) await supabaseClient.auth.signOut();
+  document.getElementById('admin-login-card').style.display = 'block';
+  document.getElementById('admin-panel-card').style.display = 'none';
+  document.getElementById('admin-email').value = '';
+  document.getElementById('admin-pass').value = '';
+  document.getElementById('tab-config-btn').style.display = 'none';
+  switchTab('buscar');
+  showToast('Sesión cerrada', 'info');
+}
+
+async function checkSession() {
+  if (!supabaseClient) return;
+  const { data } = await supabaseClient.auth.getSession();
+  if (data.session) mostrarPanelAdmin(data.session.user.email);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+loadConfig();
+if (supabaseClient) { cargarPersonas(); checkSession(); }
+</script>
+</body>
+</html>
