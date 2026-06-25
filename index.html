@@ -705,60 +705,6 @@
       </div>
     </div>
 
-      <div class="config-card">
-        <div class="form-section-title" style="margin-bottom:12px;">Cómo configurar Supabase por primera vez</div>
-        <div class="config-steps">
-          <div class="config-step">
-            <div class="step-num">1</div>
-            <div class="step-body">
-              <h3>Crea tu cuenta gratis</h3>
-              <p>Ve a <a href="https://supabase.com" target="_blank">supabase.com</a> → "Start your project" → regístrate con Google o email.</p>
-            </div>
-          </div>
-          <div class="config-step">
-            <div class="step-num">2</div>
-            <div class="step-body">
-              <h3>Crea un nuevo proyecto</h3>
-              <p>Ponle nombre (ej: <code>venezuela-sos</code>), elige una contraseña y región. Espera ~2 minutos.</p>
-            </div>
-          </div>
-          <div class="config-step">
-            <div class="step-num">3</div>
-            <div class="step-body">
-              <h3>Crea la tabla en SQL Editor</h3>
-              <div style="background:var(--gray-9);color:#A8FF78;padding:12px;border-radius:6px;font-size:12px;font-family:monospace;margin-top:8px;line-height:1.6;overflow-x:auto;">
-                CREATE TABLE personas (<br>
-                &nbsp;&nbsp;id uuid DEFAULT gen_random_uuid() PRIMARY KEY,<br>
-                &nbsp;&nbsp;nombre text NOT NULL,<br>
-                &nbsp;&nbsp;apellido text NOT NULL,<br>
-                &nbsp;&nbsp;cedula text,<br>
-                &nbsp;&nbsp;edad integer,<br>
-                &nbsp;&nbsp;zona text,<br>
-                &nbsp;&nbsp;telefono text,<br>
-                &nbsp;&nbsp;status text DEFAULT 'desaparecido',<br>
-                &nbsp;&nbsp;descripcion text,<br>
-                &nbsp;&nbsp;ubicacion text,<br>
-                &nbsp;&nbsp;reportado_por text,<br>
-                &nbsp;&nbsp;notas text,<br>
-                &nbsp;&nbsp;created_at timestamptz DEFAULT now()<br>
-                );<br><br>
-                ALTER TABLE personas ENABLE ROW LEVEL SECURITY;<br><br>
-                CREATE POLICY "lectura_publica" ON personas FOR SELECT USING (true);<br>
-                CREATE POLICY "insercion_publica" ON personas FOR INSERT WITH CHECK (true);
-              </div>
-            </div>
-          </div>
-          <div class="config-step">
-            <div class="step-num">4</div>
-            <div class="step-body">
-              <h3>Copia tus credenciales</h3>
-              <p>En Supabase ve a <strong>Project Settings → API</strong>. Copia la <strong>Project URL</strong> y la <strong>anon public key</strong> y pégalas arriba.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
   </div>
 
 </main>
