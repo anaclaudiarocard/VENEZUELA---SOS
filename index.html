@@ -649,11 +649,28 @@
   <!-- PANEL: CONFIG (solo admin autenticado) -->
   <div class="panel" id="panel-config" role="tabpanel">
 
+    <!-- CREDENCIALES SUPABASE (siempre visible) -->
+    <div id="admin-creds-card" class="config-card" style="margin-bottom:12px;">
+      <h2 style="margin-bottom:4px; font-size:16px;">🔌 Paso 1 — Conectar Supabase</h2>
+      <p style="font-size:13px; color:var(--gray-7); margin-bottom:14px;">Pega aquí tus credenciales y guarda antes de ingresar.</p>
+      <div class="config-fields">
+        <div class="form-group">
+          <label>Project URL</label>
+          <input type="text" id="cfg-url" placeholder="https://xxxxxxxxxxxx.supabase.co" />
+        </div>
+        <div class="form-group">
+          <label>Anon Public Key</label>
+          <input type="text" id="cfg-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+        </div>
+      </div>
+      <button class="btn-submit" onclick="guardarConfig()" style="margin-top:12px;">💾 Guardar credenciales</button>
+    </div>
+
     <!-- LOGIN FORM (visible hasta que el admin inicie sesión) -->
     <div id="admin-login-card" class="config-card">
       <div style="text-align:center; margin-bottom:20px;">
         <div style="font-size:40px; margin-bottom:8px;">🔐</div>
-        <h2 style="margin-bottom:4px;">Acceso de administrador</h2>
+        <h2 style="margin-bottom:4px;">Paso 2 — Acceso de administrador</h2>
         <p style="font-size:13px; color:var(--gray-7);">Solo el administrador autorizado puede acceder a esta sección.</p>
       </div>
       <div class="config-fields">
@@ -682,23 +699,11 @@
           </div>
           <button onclick="logoutAdmin()" style="padding:8px 14px; border:1.5px solid var(--gray-3); border-radius:var(--radius); background:transparent; font-size:13px; cursor:pointer; color:var(--gray-7);">Cerrar sesión</button>
         </div>
-
-        <div class="form-section-title" style="margin-bottom:12px;">Conexión a Supabase</div>
-        <div class="config-fields">
-          <div class="form-group">
-            <label>Project URL</label>
-            <input type="text" id="cfg-url" placeholder="https://xxxxxxxxxxxx.supabase.co" />
-          </div>
-          <div class="form-group">
-            <label>Anon Public Key</label>
-            <input type="text" id="cfg-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
-          </div>
-        </div>
-        <button class="btn-submit" onclick="guardarConfig()" style="margin-top:12px;">💾 Guardar y conectar</button>
-        <div class="config-note" style="margin-top:16px;">
-          ✅ <strong>Todo gratis:</strong> Supabase ofrece 500 MB y 50,000 filas gratis. Los datos se guardan de forma segura en servidores de Amazon AWS.
+        <div class="config-note">
+          ✅ <strong>Conectado correctamente.</strong> La base de datos está activa y recibiendo registros.
         </div>
       </div>
+    </div>
 
       <div class="config-card">
         <div class="form-section-title" style="margin-bottom:12px;">Cómo configurar Supabase por primera vez</div>
@@ -804,8 +809,8 @@ async function guardarConfig() {
     }
     localStorage.setItem('sb_url', url);
     localStorage.setItem('sb_key', key);
-    showToast('¡Conectado exitosamente!', 'success');
-    switchTab('buscar');
+    showToast('¡Credenciales guardadas! Ahora ingresa con tu usuario.', 'success');
+    document.getElementById('admin-creds-card').style.display = 'none';
     cargarPersonas();
   }
 }
@@ -1056,7 +1061,11 @@ async function checkSession() {
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 loadConfig();
-if (supabaseClient) { cargarPersonas(); checkSession(); }
+if (supabaseClient) {
+  cargarPersonas();
+  checkSession();
+  document.getElementById('admin-creds-card').style.display = 'none';
+}
 </script>
 </body>
 </html>
